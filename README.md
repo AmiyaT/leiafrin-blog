@@ -96,39 +96,39 @@ backend:
 #### 2) 配 GitHub 登录（OAuth）—— 需要一个小 Cloudflare Worker 做中转
 因为 Decap 要拿你的 GitHub 令牌，需要一个 OAuth 代理。用下面这个 Worker（免费）：
 
-**Worker 代码（新建一个 Worker，粘贴保存）：**
+**Worker 代码（新建一个 Worker，粘贴保存；已包含在仓库 `worker/decap-oauth.js`，可直接上传）：**
 ```js
-export default {
-  async fetch(request, env) {
-    const url = new URL(request.url);
-    if (url.pathname !== "/auth") return new Response("Not found", { status: 404 });
-    const redirectUri = url.origin + "/auth";
-    const code = url.searchParams.get("code");
-    if (!code) {
-      // 第一步：跳去 GitHub 授权
-      const gh = "https://github.com/login/oauth/authorize?client_id=" + env.CLIENT_ID
-        + "&redirect_uri=" + encodeURIComponent(redirectUri) + "&scope=repo";
-      return Response.redirect(gh, 302);
-    }
-    // 第二步：用 code 换 token
-    const r = await fetch("https://github.com/login/oauth/access_token", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "Accept": "application/json" },
-      body: JSON.stringify({
-        client_id: env.CLIENT_ID, client_secret: env.CLIENT_SECRET,
-        code: code, redirect_uri: redirectUri
-      })
-    });
-    const t = await r.json();
-    return new Response(JSON.stringify({ token: t.access_token }), {
-      headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
-    });
+addEventListener("fetch", function (event) {
+  event.respondWith(handle(event.request));
+});
+
+async function handle(request) {
+  const url = new URL(request.url);
+  if (url.pathname !== "/auth") return new Response("Decap OAuth Worker", { status: 200 });
+  const redirectUri = url.origin + "/auth";
+  const code = url.searchParams.get("code");
+  if (!code) {
+    // 第一步：跳去 GitHub 授权
+    const gh = "https://github.com/login/oauth/authorize?client_id=" + CLIENT_ID
+      + "&redirect_uri=" + encodeURIComponent(redirectUri) + "&scope=repo";
+    return Response.redirect(gh, 302);
   }
+  // 第二步：用 code 换 token
+  const r = await fetch("https://github.com/login/oauth/access_token", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Accept: "application/json" },
+    body: JSON.stringify({ client_id: CLIENT_ID, client_secret: CLIENT_SECRET, code: code, redirect_uri: redirectUri })
+  });
+  const t = await r.json();
+  return new Response(JSON.stringify({ token: t.access_token }), {
+    headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
+  });
 }
 ```
-- 在 Worker 的 **Settings → Variables** 里加两个**环境变量/机密**：
-  `CLIENT_ID`、`CLIENT_SECRET`（来自下面的 GitHub OAuth App）。
-- 部署后拿到 Worker 地址（如 `https://decap-oauth.xxx.workers.dev`），填进 `config.yml` 的 `base_url`。
+- 在 Worker 的 **Settings → Variables** 里加两个**环境变量（机密）**：
+  `CLIENT_ID`、`CLIENT_SECRET`（来自下面的 GitHub OAuth App），脚本里直接当全局变量用。
+- 部署后拿到 Worker 地址（如 `https://decap-oauth.<你的workers子域名>.workers.dev`），填进 `config.yml` 的 `base_url`。
+- ⚠️ 首次使用前要在 Cloudflare 后台 **Workers & Pages → 你的 workers.dev 子域名** 设置一次（免费，一次性）。
 
 **在 GitHub 建 OAuth App（Settings → Developer settings → OAuth Apps → New）：**
 - Homepage URL：`https://你的域名`（或 pages.dev）
