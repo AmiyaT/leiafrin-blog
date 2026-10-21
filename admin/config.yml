@@ -45,11 +45,12 @@ collections:
             summary: "{{fields.title}} ({{fields.date}})"
             fields:
               - name: slug
-                label: "链接名(英文)"
+                label: "链接名（英文）"
                 widget: string
-                hint: "用于网址，例如 hello-world → 对应 post.html?p=hello-world，别用中文和空格"
-              - { name: title, label: "标题", widget: string }
-              - { name: date, label: "日期", widget: date }
+                required: true
+                hint: "必填！这就是文章网址的后缀，只能用小写英文/数字/短横线，别用中文和空格。例如填 hello-world，文章地址就是 post.html?p=hello-world"
+              - { name: title, label: "标题", widget: string, required: true }
+              - { name: date, label: "日期", widget: date, required: true }
               - { name: excerpt, label: "首页摘要", widget: text }
               - name: tags
                 label: "标签"

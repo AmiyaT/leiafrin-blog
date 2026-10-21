@@ -40,6 +40,16 @@ function esc(s) {
   return String(s == null ? "" : s);
 }
 
+/* 链接名兜底：后台若没填 slug，这里现算一个，保证文章链接永远打得开。
+   注意：渲染首页和文章页必须用同一个函数算，结果要一致。 */
+function resolveSlug(p, i) {
+  var s = String((p && p.slug) || "").trim();
+  if (s) return s;
+  var t = String((p && p.title) || "").trim();
+  if (t) return "post-" + (i + 1) + "-" + t;
+  return "post-" + (i + 1);
+}
+
 async function applySite() {
   const s = await getSite();
   document.querySelectorAll("[data-site-brand]").forEach(function (e) {
@@ -61,11 +71,12 @@ async function renderHome() {
     list.innerHTML = '<p style="color:var(--text-faint)">还没有文章，去后台写第一篇吧。</p>';
     return;
   }
-  list.innerHTML = posts.map(function (p) {
+  list.innerHTML = posts.map(function (p, i) {
     const tags = normTags(p.tags).map(function (t) {
       return '<span class="tag">' + esc(t) + "</span>";
     }).join("");
-    return '<a class="post-card" href="post.html?p=' + encodeURIComponent(p.slug) + '">' +
+    return '<a class="post-card" href="post.html?p=' +
+      encodeURIComponent(resolveSlug(p, i)) + '">' +
       "<h2>" + esc(p.title) + tags + "</h2>" +
       '<div class="meta">' + esc(p.date) + "</div>" +
       '<p class="excerpt">' + esc(p.excerpt) + "</p>" +
@@ -77,7 +88,9 @@ async function renderPost() {
   await applySite();
   const slug = new URLSearchParams(location.search).get("p");
   const posts = await getPosts();
-  const p = posts.find(function (x) { return x.slug === slug; });
+  // 用与首页相同的规则定位文章，slug 缺失时也不会 404
+  const found = posts.findIndex(function (x, i) { return resolveSlug(x, i) === slug; });
+  const p = found >= 0 ? posts[found] : null;
   const el = document.getElementById("post");
   if (!p) {
     el.innerHTML = '<p>文章不存在或已被删除。</p><a class="back-link" href="index.html">← 返回首页</a>';
