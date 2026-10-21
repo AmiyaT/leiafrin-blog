@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>明月的小站 · 个人博客</title>
+  <meta name="description" content="一个用纯静态网页搭建的个人博客，可托管在任意静态平台，也可随时迁移到 1Panel / 服务器。" />
+  <link rel="stylesheet" href="assets/style.css" />
+</head>
+<body>
+  <header class="site-header">
+    <nav class="nav">
+      <a class="brand" href="index.html">明月的小站</a>
+      <div class="nav-links">
+        <a href="index.html">首页</a>
+        <a href="about.html">关于</a>
+      </div>
+    </nav>
+  </header>
+
+  <main class="container">
+    <section class="intro">
+      <h1>记录、思考、分享</h1>
+      <p>欢迎来到我的个人博客。这里会写一些技术笔记、生活随笔和乱七八糟的想法。</p>
+    </section>
+
+    <h2 class="section-title">最新文章</h2>
+    <div class="post-list" id="post-list">
+      <!-- 文章卡片由 assets/main.js 根据 posts-data.js 自动渲染 -->
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <p>© 2026 明月的小站 · 纯静态网页，可托管于任意平台，亦可随时迁移至服务器</p>
+  </footer>
+
+  <script src="assets/posts-data.js"></script>
+  <script src="assets/main.js"></script>
+</body>
+</html>

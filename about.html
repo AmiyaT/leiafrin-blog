@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>关于 · 明月的小站</title>
+  <meta name="description" content="关于这个博客和作者。" />
+  <link rel="stylesheet" href="assets/style.css" />
+</head>
+<body>
+  <header class="site-header">
+    <nav class="nav">
+      <a class="brand" href="index.html">明月的小站</a>
+      <div class="nav-links">
+        <a href="index.html">首页</a>
+        <a href="about.html">关于</a>
+      </div>
+    </nav>
+  </header>
+
+  <main class="container">
+    <article class="about">
+      <h1>关于这里</h1>
+      <p>你好，我是明月。这是一个用纯静态网页搭建的个人博客——没有服务器、没有数据库，文件往任意托管平台一放就能访问。</p>
+      <p>我写的东西很杂：技术踩坑记录、读完一本书的碎碎念、以及一些不成体系的思考。更新随缘，但每一篇都是认真写的。</p>
+      <h2>这个站点怎么搭的</h2>
+      <ul>
+        <li>纯 HTML / CSS / JavaScript，零依赖、零构建步骤</li>
+        <li>文章是普通的 HTML 文件，放进 <code>posts/</code> 目录即可</li>
+        <li>首页列表由 <code>assets/main.js</code> 读取 <code>posts-data.js</code> 自动生成</li>
+        <li>未来有服务器了，整套文件夹原样丢进网站根目录就能跑</li>
+      </ul>
+      <h2>联系我</h2>
+      <p>欢迎在评论区或者邮件里找我聊天。本站暂无评论系统，但留言 always welcome。</p>
+      <a class="back-link" href="index.html">← 返回首页</a>
+    </article>
+  </main>
+
+  <footer class="site-footer">
+    <p>© 2026 明月的小站 · 纯静态网页，可托管于任意平台，亦可随时迁移至服务器</p>
+  </footer>
+</body>
+</html>
