@@ -91,13 +91,13 @@ git push -u origin main
 ```yaml
 backend:
   repo: 你的GitHub用户名/你的仓库名      # ← 改成真实仓库
-  base_url: https://你的站点域名          # ← OAuth 接口和站点同域名（用 Pages Functions 实现）
+  base_url: https://你的站点域名          # ← OAuth 接口走站点同域名（Worker 路由实现，见下）
 ```
 
-> 💡 **为什么不用独立 Worker**：Cloudflare 默认给 Worker 的 `xxx.workers.dev` 域名**在中国大陆被屏蔽**，
-> 国内浏览器打开会一直转圈最后 `ERR_CONNECTION_TIMED_OUT`，导致 Decap 登录不了。
-> 本仓库改用 **Cloudflare Pages Functions**：把 OAuth 接口放在站点自己的 `/auth` 上，
-> 跟页面同域名，既不会被墙，也不需要跨域，登录最稳。
+> 💡 **为什么不用独立 Worker 的 `workers.dev` 域名**：Cloudflare 默认给 Worker 的 `xxx.workers.dev`
+> 域名**在中国大陆被屏蔽**，国内浏览器打开会一直转圈最后 `ERR_CONNECTION_TIMED_OUT`，导致 Decap 登录不了。
+> 本仓库的方案是：保留一个 Cloudflare Worker 做 OAuth 中转，但**用「路由(Route)」把它挂到站点自己的
+> 域名 `你的站点域名/auth` 上**（而不是用 `workers.dev` 或另开子域名），既不会被墙，也不需要跨域。
 
 > ⚠️ **两个容易踩的坑**（改配置时注意）：
 > 1. Decap 的 collection **不支持顶层写 `file:`**。要么用 `files:`（单文件也这么写），要么用 `folder:` + `fields:`。
@@ -106,26 +106,28 @@ backend:
 > 想先验证配置对不对再部署？把 config.yml 丢到在线 JSON Schema 校验器，或本地起服务后打开
 > `/admin` 看是否还报错——改完记得 **Ctrl+F5 强制刷新**。
 
-#### 2) 配 GitHub 登录（OAuth）—— 用 Pages Functions 做中转
-Decap 要拿你的 GitHub 令牌，需要一个 OAuth 接口做中转。本仓库用 **Cloudflare Pages Functions** 实现，
-代码在 `functions/auth.js`（提交到仓库即自动部署，无需建 Worker、无需买域名）。
+#### 2) 配 GitHub 登录（OAuth）—— 用 Cloudflare Worker + 路由做中转
 
-**在 Pages 项目里填两个加密环境变量**（唯一需要你手动做的）：
-1. Cloudflare 后台 → **Workers 和 Pages** → 点进你的 **Pages 项目**（博客那个，不是 `decap-oauth`）
-2. 顶部 **Settings** → **Environment variables** → **Add**
-3. 逐个添加（**Type 一律选 `Secret`**）：
-   - `CLIENT_ID` = GitHub OAuth App 的 Client ID
-   - `CLIENT_SECRET` = GitHub OAuth App 的 Client Secret
-4. 加完点 **Save and deploy**（或去 Deployments 页面点 **Retry deployment**）让它生效
+Decap 要拿你的 GitHub 令牌，需要一个 OAuth 接口做中转。本仓库用 **Cloudflare Worker**（代码 `worker/decap-oauth.js`）
+实现，并通过**路由(Route)**把它挂到站点自己的域名 `你的站点域名/auth` 上（不用 `workers.dev`、不用另开子域名）。
 
-> 自查是否配置成功：浏览器打开 `https://1eafrin.icu/auth?debug=1`，
-> 显示 `"client_id": "已配置"` 和 `"client_secret": "已配置"` 就说明没问题。
+**这套已经在线上配好了**（见下方「线上已就绪」），你通常只需确认 GitHub 那边回调地址对得上。
 
-**在 GitHub 建 OAuth App（Settings → Developer settings → OAuth Apps → New）：**
+**线上已就绪（本仓库的 `decap-oauth` Worker）：**
+- Worker 代码 `worker/decap-oauth.js` 已部署，`CLIENT_ID` / `CLIENT_SECRET` 两个机密已通过 Cloudflare 后台绑定（不在代码里）。
+- 路由 `1eafrin.icu/auth → decap-oauth` 已建好：访问 `https://1eafrin.icu/auth` 会跳 GitHub 授权页，即代表正常。
+- `config.yml` 的 `base_url: https://1eafrin.icu` + `auth_endpoint: /auth` 已配好，无需改动。
+- 若以后要自己重部署 Worker，必须带上这两个机密绑定，否则登录失效。
+
+> 🔧 **将来重做这一步（换账号/重装时）**：Cloudflare 后台 → **Workers 和 Pages** → 点进 `decap-oauth`
+> → **Settings** → **Domains & Routes** → **Add** → 选 **Route** → Zone 选 `你的站点域名`、Path 填 `auth`；
+> 再到 Worker 的 **Settings → Variables** 里把 `CLIENT_ID`/`CLIENT_SECRET` 设为 Secret。
+
+**在 GitHub 建/改 OAuth App（Settings → Developer settings → OAuth Apps）：**
 - Homepage URL：`https://1eafrin.icu`
 - ⚠️ **Authorization callback URL 必须一字不差填**：`https://1eafrin.icu/auth`
   （这是最常见的登录失败原因：结尾不要多 `/`，必须是 `https`、域名完全一致）
-- 创建后得到 Client ID 和 Client Secret —— 填回上面第 2 步的两个环境变量。
+- 创建后得到 Client ID 和 Client Secret —— 填进上面 Worker 的 Variables（机密）。
 
 配置好后，打开 `/admin` → 用 GitHub 登录 → 开始编辑。
 
