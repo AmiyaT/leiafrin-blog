@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>文章 · 个人博客</title>
+  <meta name="description" content="个人博客文章。" />
+  <link rel="stylesheet" href="assets/style.css" />
+</head>
+<body>
+  <header class="site-header">
+    <nav class="nav">
+      <a class="brand" data-site-brand href="index.html">我的博客</a>
+      <div class="nav-links">
+        <a href="index.html">首页</a>
+        <a href="about.html">关于</a>
+        <a href="admin/">后台</a>
+      </div>
+    </nav>
+  </header>
+
+  <main class="container">
+    <article class="post" id="post">
+      <!-- 由 assets/site.js 读取 content/posts.json 按 ?p=slug 渲染 -->
+    </article>
+  </main>
+
+  <footer class="site-footer">
+    <p>© 2026 我的博客 · 纯静态网页，可在线编辑，亦可随时迁移至服务器</p>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/marked@12/marked.min.js"></script>
+  <script src="assets/site.js"></script>
+  <script>renderPost();</script>
+</body>
+</html>

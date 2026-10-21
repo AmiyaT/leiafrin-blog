@@ -3,38 +3,40 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>明月的小站 · 个人博客</title>
-  <meta name="description" content="一个用纯静态网页搭建的个人博客，可托管在任意静态平台，也可随时迁移到 1Panel / 服务器。" />
+  <title>个人博客</title>
+  <meta name="description" content="纯静态个人博客，支持在线后台编辑。" />
   <link rel="stylesheet" href="assets/style.css" />
 </head>
 <body>
   <header class="site-header">
     <nav class="nav">
-      <a class="brand" href="index.html">明月的小站</a>
+      <a class="brand" data-site-brand href="index.html">我的博客</a>
       <div class="nav-links">
         <a href="index.html">首页</a>
         <a href="about.html">关于</a>
+        <a href="admin/">后台</a>
       </div>
     </nav>
   </header>
 
   <main class="container">
     <section class="intro">
-      <h1>记录、思考、分享</h1>
-      <p>欢迎来到我的个人博客。这里会写一些技术笔记、生活随笔和乱七八糟的想法。</p>
+      <h1 data-site-brand>我的博客</h1>
+      <p data-site-intro></p>
     </section>
 
     <h2 class="section-title">最新文章</h2>
     <div class="post-list" id="post-list">
-      <!-- 文章卡片由 assets/main.js 根据 posts-data.js 自动渲染 -->
+      <!-- 由 assets/site.js 读取 content/posts.json 自动渲染 -->
     </div>
   </main>
 
   <footer class="site-footer">
-    <p>© 2026 明月的小站 · 纯静态网页，可托管于任意平台，亦可随时迁移至服务器</p>
+    <p>© 2026 我的博客 · 纯静态网页，可在线编辑，亦可随时迁移至服务器</p>
   </footer>
 
-  <script src="assets/posts-data.js"></script>
-  <script src="assets/main.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/marked@12/marked.min.js"></script>
+  <script src="assets/site.js"></script>
+  <script>renderHome();</script>
 </body>
 </html>
