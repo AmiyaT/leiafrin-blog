@@ -8,7 +8,7 @@ backend:
   name: github
   repo: AmiyaT/leiafrin-blog
   branch: main
-  base_url: https://oauth.1eafrin.icu
+  base_url: https://1eafrin.icu
   auth_endpoint: /auth
 
 # 上传的图片存这里（在后台正文里可直接插图）

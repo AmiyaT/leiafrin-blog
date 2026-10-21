@@ -91,12 +91,13 @@ git push -u origin main
 ```yaml
 backend:
   repo: 你的GitHub用户名/你的仓库名      # ← 改成真实仓库
-  base_url: https://oauth.你的域名.com   # ← 改成下面第 2 步的 Worker 自有域名（不要用 workers.dev）
+  base_url: https://你的站点域名          # ← OAuth 接口和站点同域名（用 Pages Functions 实现）
 ```
 
-> 💡 **为什么不能用 `xxx.workers.dev`**：Cloudflare 默认给 Worker 的 `workers.dev` 域名**在中国大陆被屏蔽**，
+> 💡 **为什么不用独立 Worker**：Cloudflare 默认给 Worker 的 `xxx.workers.dev` 域名**在中国大陆被屏蔽**，
 > 国内浏览器打开会一直转圈最后 `ERR_CONNECTION_TIMED_OUT`，导致 Decap 登录不了。
-> **必须给 Worker 绑一个自有域名**（如 `oauth.1eafrin.icu`），走自己的域名才不会被打扰。
+> 本仓库改用 **Cloudflare Pages Functions**：把 OAuth 接口放在站点自己的 `/auth` 上，
+> 跟页面同域名，既不会被墙，也不需要跨域，登录最稳。
 
 > ⚠️ **两个容易踩的坑**（改配置时注意）：
 > 1. Decap 的 collection **不支持顶层写 `file:`**。要么用 `files:`（单文件也这么写），要么用 `folder:` + `fields:`。
@@ -105,50 +106,26 @@ backend:
 > 想先验证配置对不对再部署？把 config.yml 丢到在线 JSON Schema 校验器，或本地起服务后打开
 > `/admin` 看是否还报错——改完记得 **Ctrl+F5 强制刷新**。
 
-#### 2) 配 GitHub 登录（OAuth）—— 需要一个小 Cloudflare Worker 做中转
-因为 Decap 要拿你的 GitHub 令牌，需要一个 OAuth 代理。用下面这个 Worker（免费）：
+#### 2) 配 GitHub 登录（OAuth）—— 用 Pages Functions 做中转
+Decap 要拿你的 GitHub 令牌，需要一个 OAuth 接口做中转。本仓库用 **Cloudflare Pages Functions** 实现，
+代码在 `functions/auth.js`（提交到仓库即自动部署，无需建 Worker、无需买域名）。
 
-**Worker 代码（新建一个 Worker，粘贴保存；已包含在仓库 `worker/decap-oauth.js`，可直接上传）：**
-```js
-addEventListener("fetch", function (event) {
-  event.respondWith(handle(event.request));
-});
+**在 Pages 项目里填两个加密环境变量**（唯一需要你手动做的）：
+1. Cloudflare 后台 → **Workers 和 Pages** → 点进你的 **Pages 项目**（博客那个，不是 `decap-oauth`）
+2. 顶部 **Settings** → **Environment variables** → **Add**
+3. 逐个添加（**Type 一律选 `Secret`**）：
+   - `CLIENT_ID` = GitHub OAuth App 的 Client ID
+   - `CLIENT_SECRET` = GitHub OAuth App 的 Client Secret
+4. 加完点 **Save and deploy**（或去 Deployments 页面点 **Retry deployment**）让它生效
 
-async function handle(request) {
-  const url = new URL(request.url);
-  if (url.pathname !== "/auth") return new Response("Decap OAuth Worker", { status: 200 });
-  const redirectUri = url.origin + "/auth";
-  const code = url.searchParams.get("code");
-  if (!code) {
-    // 第一步：跳去 GitHub 授权
-    const gh = "https://github.com/login/oauth/authorize?client_id=" + CLIENT_ID
-      + "&redirect_uri=" + encodeURIComponent(redirectUri) + "&scope=repo";
-    return Response.redirect(gh, 302);
-  }
-  // 第二步：用 code 换 token
-  const r = await fetch("https://github.com/login/oauth/access_token", {
-    method: "POST",
-    headers: { "Content-Type": "application/json", Accept: "application/json" },
-    body: JSON.stringify({ client_id: CLIENT_ID, client_secret: CLIENT_SECRET, code: code, redirect_uri: redirectUri })
-  });
-  const t = await r.json();
-  return new Response(JSON.stringify({ token: t.access_token }), {
-    headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
-  });
-}
-```
-> ✅ **本仓库的 OAuth Worker 已部署好，密钥也已配好**。默认地址 `workers.dev` 在国内被墙，
-> 已在 Cloudflare 给 Worker 绑自有域名 **`oauth.1eafrin.icu`**（走自有域名才能正常登录），
-> `config.yml` 的 `base_url` 已填它，`CLIENT_ID`/`CLIENT_SECRET` 也已通过部署绑定（机密，不在代码里）。
-> 你**不需要**再手动建 Worker 或填变量；只需确认 GitHub OAuth App 的「回调地址」与下面一致。
-> （以后若要自己重新部署这个 Worker，必须带上这两个机密绑定，否则登录会失效。）
+> 自查是否配置成功：浏览器打开 `https://1eafrin.icu/auth?debug=1`，
+> 显示 `"client_id": "已配置"` 和 `"client_secret": "已配置"` 就说明没问题。
 
 **在 GitHub 建 OAuth App（Settings → Developer settings → OAuth Apps → New）：**
 - Homepage URL：`https://1eafrin.icu`
-- ⚠️ **Authorization callback URL 必须一字不差填**：`https://oauth.1eafrin.icu/auth`
+- ⚠️ **Authorization callback URL 必须一字不差填**：`https://1eafrin.icu/auth`
   （这是最常见的登录失败原因：结尾不要多 `/`，必须是 `https`、域名完全一致）
-- 创建后得到 Client ID 和 Client Secret —— **本仓库的 Worker 已经用这两个值配好了密钥，你无需再填**；
-  如果你是自己另建 Worker，才需要把这两个值填进 Worker 的 Variables。
+- 创建后得到 Client ID 和 Client Secret —— 填回上面第 2 步的两个环境变量。
 
 配置好后，打开 `/admin` → 用 GitHub 登录 → 开始编辑。
 
