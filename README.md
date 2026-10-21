@@ -41,8 +41,9 @@
 ## 二、上线（用 Git 仓库部署，因为在线后台需要 Git 作为后台）
 
 > ⚠️ 在线编辑（Decap CMS）依赖 GitHub 作为内容后台，所以**必须用「连接 Git 仓库」的方式部署**，
-> 不能用之前的「直接上传（Direct Upload）」。如果你之前用 Direct Upload 部署过，
-> 在 Pages 项目里 **Settings → Git → Connect a repository** 连上仓库即可，再重新绑定域名。
+> 不能用之前的「直接上传（Direct Upload）」。Cloudflare Pages **不支持把直接上传的项目改成连 Git**，
+> 请**新建一个 Pages 项目并选「连接 Git 仓库」**，然后到新项目的 **Custom domains** 把 `1eafrin.icu` 绑过来
+> （绑定时旧项目会自动让出域名），旧的直接上传项目可删。
 
 ### 方案 A：Cloudflare Pages + GitHub（推荐）
 1. 把本项目推到 GitHub 仓库（见下方「推到 GitHub」）。
@@ -93,6 +94,13 @@ backend:
   base_url: https://你的OAuthWorker.workers.dev   # ← 改成下面第 2 步的 Worker 地址
 ```
 
+> ⚠️ **两个容易踩的坑**（改配置时注意）：
+> 1. Decap 的 collection **不支持顶层写 `file:`**。要么用 `files:`（单文件也这么写），要么用 `folder:` + `fields:`。
+> 2. `list` 控件里，**单个**子项用 `field:`，**多个**子项用 `fields:`（复数）。写错会报 `must be object`。
+>
+> 想先验证配置对不对再部署？把 config.yml 丢到在线 JSON Schema 校验器，或本地起服务后打开
+> `/admin` 看是否还报错——改完记得 **Ctrl+F5 强制刷新**。
+
 #### 2) 配 GitHub 登录（OAuth）—— 需要一个小 Cloudflare Worker 做中转
 因为 Decap 要拿你的 GitHub 令牌，需要一个 OAuth 代理。用下面这个 Worker（免费）：
 
@@ -125,15 +133,17 @@ async function handle(request) {
   });
 }
 ```
-- 在 Worker 的 **Settings → Variables** 里加两个**环境变量（机密）**：
-  `CLIENT_ID`、`CLIENT_SECRET`（来自下面的 GitHub OAuth App），脚本里直接当全局变量用。
-- 部署后拿到 Worker 地址（如 `https://decap-oauth.<你的workers子域名>.workers.dev`），填进 `config.yml` 的 `base_url`。
-- ⚠️ 首次使用前要在 Cloudflare 后台 **Workers & Pages → 你的 workers.dev 子域名** 设置一次（免费，一次性）。
+> ✅ **本仓库的 OAuth Worker 已部署好，密钥也已配好**，地址就是 `https://decap-oauth.1162136596.workers.dev`，
+> `config.yml` 的 `base_url` 已填它，`CLIENT_ID`/`CLIENT_SECRET` 也已通过部署绑定（机密，不在代码里）。
+> 你**不需要**再手动建 Worker 或填变量；只剩下面第 3 步的 GitHub OAuth App「回调地址」要对上。
+> （以后若要自己重新部署这个 Worker，必须带上这两个机密绑定，否则登录会失效。）
 
 **在 GitHub 建 OAuth App（Settings → Developer settings → OAuth Apps → New）：**
-- Homepage URL：`https://你的域名`（或 pages.dev）
-- Authorization callback URL：`https://你的Worker地址/auth`
-- 创建后得到 Client ID 和 Client Secret，填进 Worker 的变量里。
+- Homepage URL：`https://1eafrin.icu`
+- ⚠️ **Authorization callback URL 必须一字不差填**：`https://decap-oauth.1162136596.workers.dev/auth`
+  （这是最常见的登录失败原因：结尾不要多 `/`，必须是 `https`、域名完全一致）
+- 创建后得到 Client ID 和 Client Secret —— **本仓库的 Worker 已经用这两个值配好了密钥，你无需再填**；
+  如果你是自己另建 Worker，才需要把这两个值填进 Worker 的 Variables。
 
 配置好后，打开 `/admin` → 用 GitHub 登录 → 开始编辑。
 
@@ -172,3 +182,15 @@ server {
 ## 六、换风格
 
 所有配色在 `assets/style.css` 顶部 `:root` 变量：`--accent`（主题色）、`--bg`、`--text` 等，改几行即换肤。
+
+---
+
+## 七、安全收尾（重要）
+
+本次搭建用到了两个高权限令牌（GitHub PAT、Cloudflare API Token），**用完后建议吊销**：
+
+- **GitHub**：Settings → Developer settings → **Personal access tokens** → 删掉当时给的 PAT。
+- **Cloudflare**：官网右上角头像 → **My Profile → API Tokens** → 删掉当时的 Token。
+
+> 吊销令牌**不影响**线上运行：Worker 已部署、密钥已绑定、站点已上线，只是以后不能再拿这两个令牌改 Cloudflare/GitHub 配置。
+> 日常改内容走 `/admin` 后台（用你自己的 GitHub 账号登录）即可，不需要这两个令牌。
