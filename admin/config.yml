@@ -6,7 +6,7 @@
 # ===========================================================
 backend:
   name: github
-  repo: YOUR_GITHUB_USER/YOUR_REPO
+  repo: AmiyaT/leiafrin-blog
   branch: main
   base_url: https://decap-oauth.1162136596.workers.dev
   auth_endpoint: /auth
