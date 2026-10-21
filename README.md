@@ -91,8 +91,12 @@ git push -u origin main
 ```yaml
 backend:
   repo: 你的GitHub用户名/你的仓库名      # ← 改成真实仓库
-  base_url: https://你的OAuthWorker.workers.dev   # ← 改成下面第 2 步的 Worker 地址
+  base_url: https://oauth.你的域名.com   # ← 改成下面第 2 步的 Worker 自有域名（不要用 workers.dev）
 ```
+
+> 💡 **为什么不能用 `xxx.workers.dev`**：Cloudflare 默认给 Worker 的 `workers.dev` 域名**在中国大陆被屏蔽**，
+> 国内浏览器打开会一直转圈最后 `ERR_CONNECTION_TIMED_OUT`，导致 Decap 登录不了。
+> **必须给 Worker 绑一个自有域名**（如 `oauth.1eafrin.icu`），走自己的域名才不会被打扰。
 
 > ⚠️ **两个容易踩的坑**（改配置时注意）：
 > 1. Decap 的 collection **不支持顶层写 `file:`**。要么用 `files:`（单文件也这么写），要么用 `folder:` + `fields:`。
@@ -133,14 +137,15 @@ async function handle(request) {
   });
 }
 ```
-> ✅ **本仓库的 OAuth Worker 已部署好，密钥也已配好**，地址就是 `https://decap-oauth.1162136596.workers.dev`，
+> ✅ **本仓库的 OAuth Worker 已部署好，密钥也已配好**。默认地址 `workers.dev` 在国内被墙，
+> 已在 Cloudflare 给 Worker 绑自有域名 **`oauth.1eafrin.icu`**（走自有域名才能正常登录），
 > `config.yml` 的 `base_url` 已填它，`CLIENT_ID`/`CLIENT_SECRET` 也已通过部署绑定（机密，不在代码里）。
-> 你**不需要**再手动建 Worker 或填变量；只剩下面第 3 步的 GitHub OAuth App「回调地址」要对上。
+> 你**不需要**再手动建 Worker 或填变量；只需确认 GitHub OAuth App 的「回调地址」与下面一致。
 > （以后若要自己重新部署这个 Worker，必须带上这两个机密绑定，否则登录会失效。）
 
 **在 GitHub 建 OAuth App（Settings → Developer settings → OAuth Apps → New）：**
 - Homepage URL：`https://1eafrin.icu`
-- ⚠️ **Authorization callback URL 必须一字不差填**：`https://decap-oauth.1162136596.workers.dev/auth`
+- ⚠️ **Authorization callback URL 必须一字不差填**：`https://oauth.1eafrin.icu/auth`
   （这是最常见的登录失败原因：结尾不要多 `/`，必须是 `https`、域名完全一致）
 - 创建后得到 Client ID 和 Client Secret —— **本仓库的 Worker 已经用这两个值配好了密钥，你无需再填**；
   如果你是自己另建 Worker，才需要把这两个值填进 Worker 的 Variables。
