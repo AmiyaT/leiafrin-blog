@@ -20,18 +20,16 @@
 
 ---
 
-## 一、本地预览
+## 一、本地预览（一键启动）
 
-不需要装任何东西，在项目根目录执行：
+项目自带启动脚本，无需记命令：
 
-```bash
-# Python 自带，任选其一
-python -m http.server 8080
-# 然后浏览器打开 http://localhost:8080
-```
+- **Windows**：双击 `start.bat` 即可（自动开浏览器）。
+- **macOS / Linux / Git Bash**：运行 `./start.sh`。
+- **手动**：`python serve.py`（默认 8080 端口，可加端口号 `python serve.py 9000`）。
 
-> 注意：直接双击 `index.html` 用 `file://` 打开也能看，但部分浏览器会限制本地 JS，
-> 用上面的本地服务器方式最稳妥。
+`serve.py` 特点：绑定 `0.0.0.0`（同 WiFi 手机可访问）、自动开浏览器、关闭缓存（改完刷新即见效）。
+所有逻辑仅用 Python 标准库，Python 3.7+ 即可，无任何第三方依赖。
 
 ---
 
