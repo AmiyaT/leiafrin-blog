@@ -30,24 +30,29 @@ collections:
           - { name: about, label: "关于页内容", widget: markdown }
 
   # ---------- 文章 ----------
+  # 注意：Decap 的 collection 只支持两种形态 —— 用 files:，或用 folder:+fields:。
+  # 单文件（content/posts.json）也要写成 files: 里的一项，不能在 collection 上直接写 file:
   - name: "posts"
     label: "文章"
-    file: "content/posts.json"
-    fields:
-      - name: posts
-        label: "文章列表"
-        widget: list
-        summary: "{{fields.title}} ({{fields.date}})"
+    files:
+      - name: "posts-data"
+        label: "文章数据"
+        file: "content/posts.json"
         fields:
-          - name: slug
-            label: "链接名(英文)"
-            widget: string
-            hint: "用于网址，例如 hello-world → 对应 post.html?p=hello-world，别用中文和空格"
-          - { name: title, label: "标题", widget: string }
-          - { name: date, label: "日期", widget: date }
-          - { name: excerpt, label: "首页摘要", widget: text }
-          - name: tags
-            label: "标签"
+          - name: posts
+            label: "文章列表"
             widget: list
-            field: { name: tag, label: "标签", widget: string }
-          - { name: body, label: "正文(Markdown)", widget: markdown }
+            summary: "{{fields.title}} ({{fields.date}})"
+            fields:
+              - name: slug
+                label: "链接名(英文)"
+                widget: string
+                hint: "用于网址，例如 hello-world → 对应 post.html?p=hello-world，别用中文和空格"
+              - { name: title, label: "标题", widget: string }
+              - { name: date, label: "日期", widget: date }
+              - { name: excerpt, label: "首页摘要", widget: text }
+              - name: tags
+                label: "标签"
+                widget: list
+                field: { name: tag, label: "标签", widget: string }
+              - { name: body, label: "正文(Markdown)", widget: markdown }
