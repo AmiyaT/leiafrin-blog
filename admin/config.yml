@@ -38,7 +38,7 @@ collections:
         label: "文章列表"
         widget: list
         summary: "{{fields.title}} ({{fields.date}})"
-        field:
+        fields:
           - name: slug
             label: "链接名(英文)"
             widget: string

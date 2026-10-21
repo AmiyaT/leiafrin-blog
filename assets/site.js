@@ -21,6 +21,16 @@ async function getPosts() {
   } catch (e) { return []; }
 }
 
+/* 标签兼容：后台保存后可能是 "随笔" 或 { tag: "随笔" }，统一成字符串数组 */
+function normTags(raw) {
+  if (!Array.isArray(raw)) return [];
+  return raw.map(function (t) {
+    if (typeof t === "string") return t;
+    if (t && typeof t === "object") return String(t.tag || t.name || t.title || "");
+    return String(t == null ? "" : t);
+  }).filter(Boolean);
+}
+
 function md(text) {
   if (window.marked && window.marked.parse) return window.marked.parse(text || "");
   return "<pre>" + (text || "") + "</pre>";
@@ -52,7 +62,7 @@ async function renderHome() {
     return;
   }
   list.innerHTML = posts.map(function (p) {
-    const tags = (p.tags || []).map(function (t) {
+    const tags = normTags(p.tags).map(function (t) {
       return '<span class="tag">' + esc(t) + "</span>";
     }).join("");
     return '<a class="post-card" href="post.html?p=' + encodeURIComponent(p.slug) + '">' +
@@ -74,7 +84,7 @@ async function renderPost() {
     return;
   }
   document.title = p.title;
-  const tags = (p.tags || []).join(" ");
+  const tags = normTags(p.tags).join(" ");
   el.innerHTML =
     '<header class="post-header"><h1>' + esc(p.title) + "</h1>" +
     '<div class="meta">' + esc(p.date) + (tags ? " · " + esc(tags) : "") + "</div></header>" +
